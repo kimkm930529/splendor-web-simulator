@@ -30,87 +30,97 @@ let cardData = [];
 
 // 게임 초기화
 async function initGame() {
-    // Socket.IO를 통해 서버에 게임 입장 요청
-    socket.emit('join_game', { 
-        gameId: 'game1', 
-        playerName: '플레이어1' 
-    });
-    
-    // 서버에서 게임 상태 업데이트를 받을 때마다 처리
-    socket.on('game_state_update', (data) => {
-        // 서버에서 받은 게임 상태로 업데이트
-        gameState = data.gameState;
-        updateDisplay();
-    });
-    
-    // 게임 입장 성공 시 처리
-    socket.on('game_joined', (data) => {
-        console.log('게임에 입장했습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-        addLogEntry("게임에 입장했습니다!");
-    });
-    
-    // 게임 시작 시 처리
-    socket.on('game_started', (data) => {
-        console.log('게임이 시작되었습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-        addLogEntry("게임이 시작되었습니다!");
-    });
-    
-    // 토큰 선택 시 처리
-    socket.on('token_selected', (data) => {
-        console.log('토큰이 선택되었습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-    });
-    
-    // 토큰 획득 시 처리
-    socket.on('tokens_taken', (data) => {
-        console.log('토큰을 획득했습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-        addLogEntry("토큰을 획득했습니다!");
-    });
-    
-    // 카드 구매 시 처리
-    socket.on('card_bought', (data) => {
-        console.log('카드를 구매했습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-        addLogEntry("카드를 구매했습니다!");
-    });
-    
-    // 카드 예약 시 처리
-    socket.on('card_reserved', (data) => {
-        console.log('카드를 예약했습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-        addLogEntry("카드를 예약했습니다!");
-    });
-    
-    // 턴 종료 시 처리
-    socket.on('turn_ended', (data) => {
-        console.log('턴이 종료되었습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-        addLogEntry("턴이 종료되었습니다!");
-    });
-    
-    // 게임 종료 시 처리
-    socket.on('game_finished', (data) => {
-        console.log('게임이 종료되었습니다:', data);
-        gameState = data.gameState;
-        updateDisplay();
-        addLogEntry("게임이 종료되었습니다!");
-    });
-    
-    // 에러 처리
-    socket.on('error', (data) => {
-        console.error('에러 발생:', data.message);
-        addLogEntry(`에러: ${data.message}`);
-    });
+    // Socket.IO 서버가 연결된 경우
+    if (socket && socket.connected && socket.connected === true) {
+        // Socket.IO를 통해 서버에 게임 입장 요청
+        socket.emit('join_game', { 
+            gameId: 'game1', 
+            playerName: '플레이어1' 
+        });
+        
+        // 서버에서 게임 상태 업데이트를 받을 때마다 처리
+        socket.on('game_state_update', (data) => {
+            // 서버에서 받은 게임 상태로 업데이트
+            gameState = data.gameState;
+            updateDisplay();
+        });
+        
+        // 게임 입장 성공 시 처리
+        socket.on('game_joined', (data) => {
+            console.log('게임에 입장했습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+            addLogEntry("게임에 입장했습니다!");
+        });
+        
+        // 게임 시작 시 처리
+        socket.on('game_started', (data) => {
+            console.log('게임이 시작되었습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+            addLogEntry("게임이 시작되었습니다!");
+        });
+        
+        // 토큰 선택 시 처리
+        socket.on('token_selected', (data) => {
+            console.log('토큰이 선택되었습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+        });
+        
+        // 토큰 획득 시 처리
+        socket.on('tokens_taken', (data) => {
+            console.log('토큰을 획득했습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+            addLogEntry("토큰을 획득했습니다!");
+        });
+        
+        // 카드 구매 시 처리
+        socket.on('card_bought', (data) => {
+            console.log('카드를 구매했습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+            addLogEntry("카드를 구매했습니다!");
+        });
+        
+        // 카드 예약 시 처리
+        socket.on('card_reserved', (data) => {
+            console.log('카드를 예약했습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+            addLogEntry("카드를 예약했습니다!");
+        });
+        
+        // 턴 종료 시 처리
+        socket.on('turn_ended', (data) => {
+            console.log('턴이 종료되었습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+            addLogEntry("턴이 종료되었습니다!");
+        });
+        
+        // 게임 종료 시 처리
+        socket.on('game_finished', (data) => {
+            console.log('게임이 종료되었습니다:', data);
+            gameState = data.gameState;
+            updateDisplay();
+            addLogEntry("게임이 종료되었습니다!");
+        });
+        
+        // 에러 처리
+        socket.on('error', (data) => {
+            console.error('에러 발생:', data.message);
+            addLogEntry(`에러: ${data.message}`);
+        });
+    } else {
+        // 로컬 모드: 기존 로직 사용
+        console.log('로컬 모드로 게임을 시작합니다.');
+        await loadCardData();
+        setupNobleTiles();
+        setupDevelopmentCards();
+        addLogEntry("로컬 모드로 게임이 시작되었습니다!");
+    }
     
     // 초기 UI 설정
     updateDisplay();
@@ -120,8 +130,8 @@ async function initGame() {
 // CSV 파일에서 카드 데이터 로드
 async function loadCardData() {
     const urls = [
-        './splendor_card.csv',
         'splendor_card.csv',
+        './splendor_card.csv',
         '/splendor_card.csv'
     ];
     
@@ -130,11 +140,16 @@ async function loadCardData() {
             console.log(`CSV 파일 로드 시도: ${url}`);
             const response = await fetch(url);
             
+            console.log(`응답 상태: ${response.status} ${response.statusText}`);
+            console.log(`응답 헤더:`, response.headers);
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const csvText = await response.text();
+            console.log(`CSV 텍스트 길이: ${csvText.length} 문자`);
+            console.log(`CSV 첫 100자: ${csvText.substring(0, 100)}`);
             const lines = csvText.split('\n');
             
             // 보너스 보석 한글-영어 매핑

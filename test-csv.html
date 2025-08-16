@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV 로드 테스트</title>
+</head>
+<body>
+    <h1>CSV 파일 로드 테스트</h1>
+    <button onclick="testCSV()">CSV 파일 로드 테스트</button>
+    <div id="result"></div>
+
+    <script>
+        async function testCSV() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>테스트 시작...</p>';
+            
+            const urls = [
+                'splendor_card.csv',
+                './splendor_card.csv',
+                '/splendor_card.csv'
+            ];
+            
+            for (const url of urls) {
+                try {
+                    console.log(`테스트 URL: ${url}`);
+                    resultDiv.innerHTML += `<p>테스트 URL: ${url}</p>`;
+                    
+                    const response = await fetch(url);
+                    console.log(`응답 상태: ${response.status} ${response.statusText}`);
+                    resultDiv.innerHTML += `<p>응답 상태: ${response.status} ${response.statusText}</p>`;
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const csvText = await response.text();
+                    console.log(`CSV 텍스트 길이: ${csvText.length} 문자`);
+                    resultDiv.innerHTML += `<p>CSV 텍스트 길이: ${csvText.length} 문자</p>`;
+                    
+                    const lines = csvText.split('\n');
+                    console.log(`CSV 라인 수: ${lines.length}`);
+                    resultDiv.innerHTML += `<p>CSV 라인 수: ${lines.length}</p>`;
+                    
+                    if (lines.length > 1) {
+                        resultDiv.innerHTML += `<p>첫 번째 데이터 라인: ${lines[1]}</p>`;
+                    }
+                    
+                    resultDiv.innerHTML += `<p style="color: green;">✅ 성공!</p>`;
+                    return;
+                    
+                } catch (error) {
+                    console.error(`CSV 파일 로드 실패 (${url}):`, error);
+                    resultDiv.innerHTML += `<p style="color: red;">❌ 실패: ${error.message}</p>`;
+                }
+            }
+            
+            resultDiv.innerHTML += `<p style="color: red;">모든 URL에서 실패했습니다.</p>`;
+        }
+    </script>
+</body>
+</html>
