@@ -119,48 +119,72 @@ async function initGame() {
 
 // CSV 파일에서 카드 데이터 로드
 async function loadCardData() {
-    try {
-        const response = await fetch('https://raw.githubusercontent.com/kimkm930529/splendor-web-simulator/main/splendor_card.csv');
-        const csvText = await response.text();
-        const lines = csvText.split('\n');
-        
-        // 보너스 보석 한글-영어 매핑
-        const bonusMapping = {
-            '사파이어': 'sapphire',
-            '에메랄드': 'emerald',
-            '루비': 'ruby',
-            '다이아몬드': 'diamond',
-            '오닉스': 'onyx'
-        };
-        
-        // 헤더 제거
-        for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line) {
-                const values = line.split(',');
-                if (values.length >= 8) {
-                    const card = {
-                        level: parseInt(values[0].replace('레벨 ', '')),
-                        prestige: parseInt(values[1]),
-                        bonus: bonusMapping[values[2]] || values[2], // 한글을 영어로 변환
-                        cost: {
-                            diamond: parseInt(values[3]),
-                            emerald: parseInt(values[4]),
-                            ruby: parseInt(values[5]),
-                            onyx: parseInt(values[6]),
-                            sapphire: parseInt(values[7])
-                        }
-                    };
-                    cardData.push(card);
+    const urls = [
+        './splendor_card.csv',
+        'splendor_card.csv',
+        '/splendor_card.csv'
+    ];
+    
+    for (const url of urls) {
+        try {
+            console.log(`CSV 파일 로드 시도: ${url}`);
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const csvText = await response.text();
+            const lines = csvText.split('\n');
+            
+            // 보너스 보석 한글-영어 매핑
+            const bonusMapping = {
+                '사파이어': 'sapphire',
+                '에메랄드': 'emerald',
+                '루비': 'ruby',
+                '다이아몬드': 'diamond',
+                '오닉스': 'onyx'
+            };
+            
+            // 헤더 제거
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line) {
+                    const values = line.split(',');
+                    if (values.length >= 8) {
+                        const card = {
+                            level: parseInt(values[0].replace('레벨 ', '')),
+                            prestige: parseInt(values[1]),
+                            bonus: bonusMapping[values[2]] || values[2], // 한글을 영어로 변환
+                            cost: {
+                                diamond: parseInt(values[3]),
+                                emerald: parseInt(values[4]),
+                                ruby: parseInt(values[5]),
+                                onyx: parseInt(values[6]),
+                                sapphire: parseInt(values[7])
+                            }
+                        };
+                        cardData.push(card);
+                    }
                 }
             }
+            console.log('카드 데이터 로드 완료:', cardData.length, '장');
+            return; // 성공하면 함수 종료
+        } catch (error) {
+            console.error(`CSV 파일 로드 실패 (${url}):`, error);
+            continue; // 다음 URL 시도
         }
-        console.log('카드 데이터 로드 완료:', cardData.length, '장');
-    } catch (error) {
-        console.error('카드 데이터 로드 실패:', error);
-        // 기본 카드 데이터로 대체
-        cardData = getDefaultCardData();
     }
+    
+    // 모든 URL이 실패한 경우
+    console.error('모든 CSV 파일 로드 시도 실패');
+    console.error('에러 상세 정보:', {
+        message: '모든 URL에서 CSV 파일을 로드할 수 없습니다.',
+        type: 'NetworkError'
+    });
+    // 기본 카드 데이터로 대체
+    cardData = getDefaultCardData();
+    console.log('기본 카드 데이터로 대체되었습니다.');
 }
 
 // 기본 카드 데이터 (CSV 로드 실패시 사용)
