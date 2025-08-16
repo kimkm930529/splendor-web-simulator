@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스플렌더 - Splendor Web Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>스플렌더</h1>
+            <div id="game-info">
+                <div id="current-player">현재 플레이어: <span id="player-name">플레이어 1</span></div>
+                <div id="victory-points">명성 점수: <span id="points">0</span></div>
+            </div>
+        </header>
+
+        <div id="game-board">
+            <!-- 보석 토큰 영역 -->
+            <div id="gem-tokens">
+                <h3>보석 토큰</h3>
+                <div id="token-display">
+                    <div class="token-group">
+                        <div class="token sapphire" data-gem="sapphire">
+                            <span class="token-count" id="sapphire-count">5</span>
+                        </div>
+                        <span>사파이어</span>
+                    </div>
+                    <div class="token-group">
+                        <div class="token emerald" data-gem="emerald">
+                            <span class="token-count" id="emerald-count">5</span>
+                        </div>
+                        <span>에메랄드</span>
+                    </div>
+                    <div class="token-group">
+                        <div class="token ruby" data-gem="ruby">
+                            <span class="token-count" id="ruby-count">5</span>
+                        </div>
+                        <span>루비</span>
+                    </div>
+                    <div class="token-group">
+                        <div class="token diamond" data-gem="diamond">
+                            <span class="token-count" id="diamond-count">5</span>
+                        </div>
+                        <span>다이아몬드</span>
+                    </div>
+                    <div class="token-group">
+                        <div class="token onyx" data-gem="onyx">
+                            <span class="token-count" id="onyx-count">5</span>
+                        </div>
+                        <span>오닉스</span>
+                    </div>
+                    <div class="token-group">
+                        <div class="token gold" data-gem="gold">
+                            <span class="token-count" id="gold-count">5</span>
+                        </div>
+                        <span>금</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 개발 카드 영역 -->
+            <div id="development-cards">
+                <h3>개발 카드</h3>
+                <div id="card-levels">
+                    <div class="card-level" id="level-3">
+                        <h4>레벨 3</h4>
+                        <div class="card-row" id="level-3-cards"></div>
+                    </div>
+                    <div class="card-level" id="level-2">
+                        <h4>레벨 2</h4>
+                        <div class="card-row" id="level-2-cards"></div>
+                    </div>
+                    <div class="card-level" id="level-1">
+                        <h4>레벨 1</h4>
+                        <div class="card-row" id="level-1-cards"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 귀족 타일 영역 -->
+            <div id="noble-tiles">
+                <h3>귀족 타일</h3>
+                <div id="noble-display"></div>
+            </div>
+        </div>
+
+        <!-- 플레이어 영역 -->
+        <div id="player-area">
+            <div id="player1-area" class="player-section">
+                <h3>플레이어 1</h3>
+                <div class="player-info">
+                    <div class="player-cards">
+                        <h4>소유 카드</h4>
+                        <div id="player1-owned-cards"></div>
+                    </div>
+                    <div class="player-tokens">
+                        <h4>소유 토큰</h4>
+                        <div id="player1-token-display"></div>
+                    </div>
+                    <div class="reserved-cards">
+                        <h4>예약된 카드</h4>
+                        <div id="player1-reserved-display"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="player2-area" class="player-section">
+                <h3>플레이어 2</h3>
+                <div class="player-info">
+                    <div class="player-cards">
+                        <h4>소유 카드</h4>
+                        <div id="player2-owned-cards"></div>
+                    </div>
+                    <div class="player-tokens">
+                        <h4>소유 토큰</h4>
+                        <div id="player2-token-display"></div>
+                    </div>
+                    <div class="reserved-cards">
+                        <h4>예약된 카드</h4>
+                        <div id="player2-reserved-display"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- 선택된 토큰 영역 -->
+        <div id="selected-tokens-area">
+            <h3>선택된 토큰</h3>
+            <div id="selected-tokens-display">선택된 토큰이 없습니다.</div>
+            <button id="cancel-selection-btn" style="display: none;">선택 취소</button>
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div id="action-buttons">
+            <button id="take-tokens-btn">보석 토큰 가져오기</button>
+            <button id="buy-card-btn">카드 구매</button>
+            <button id="reserve-card-btn">카드 예약</button>
+            <button id="end-turn-btn" disabled>턴 종료</button>
+            <button id="new-game-btn">새 게임</button>
+        </div>
+
+        <!-- 모달 -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modal-body"></div>
+            </div>
+        </div>
+
+        <!-- 게임 로그 -->
+        <div id="game-log">
+            <h3>게임 로그</h3>
+            <div id="log-content"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
