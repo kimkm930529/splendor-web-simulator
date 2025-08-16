@@ -120,7 +120,7 @@ async function initGame() {
 // CSV 파일에서 카드 데이터 로드
 async function loadCardData() {
     try {
-        const response = await fetch('splendor_card.csv');
+        const response = await fetch('/splendor-web-simulator/splendor_card.csv');
         const csvText = await response.text();
         const lines = csvText.split('\n');
         
