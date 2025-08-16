@@ -165,6 +165,25 @@
         </div>
     </div>
 
+    <!-- 플레이어 이름 입력 모달 -->
+    <div id="player-name-modal" class="modal">
+        <div class="modal-content">
+            <h2>플레이어 이름 입력</h2>
+            <div class="player-input-section">
+                <label for="player1-name">플레이어 1 이름:</label>
+                <input type="text" id="player1-name" placeholder="플레이어 1" value="플레이어1">
+            </div>
+            <div class="player-input-section">
+                <label for="player2-name">플레이어 2 이름:</label>
+                <input type="text" id="player2-name" placeholder="플레이어 2" value="플레이어2">
+            </div>
+            <div class="modal-buttons">
+                <button id="start-multiplayer-btn">멀티플레이어 게임 시작</button>
+                <button id="start-singleplayer-btn">로컬 게임 시작</button>
+            </div>
+        </div>
+    </div>
+
     <script src="game.js"></script>
     <script src="actions.js"></script>
     <script src="ui.js"></script>

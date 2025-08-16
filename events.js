@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('new-game-btn').addEventListener('click', startNewGame);
     document.getElementById('cancel-selection-btn').addEventListener('click', cancelSelection);
     
+    // 플레이어 이름 입력 모달 버튼 이벤트
+    document.getElementById('start-multiplayer-btn').addEventListener('click', startMultiplayerGame);
+    document.getElementById('start-singleplayer-btn').addEventListener('click', startLocalGame);
+    
     // 모달 닫기
     document.querySelector('.close').addEventListener('click', closeModal);
     window.addEventListener('click', (event) => {

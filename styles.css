@@ -447,6 +447,58 @@ button:disabled {
 #end-turn-btn { background: #e53e3e; color: white; }
 #new-game-btn { background: #805ad5; color: white; }
 
+/* 플레이어 이름 입력 모달 스타일 */
+.player-input-section {
+    margin: 15px 0;
+}
+
+.player-input-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.player-input-section input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#start-multiplayer-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#start-multiplayer-btn:hover {
+    background-color: #45a049;
+}
+
+#start-singleplayer-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+#start-singleplayer-btn:hover {
+    background-color: #1976D2;
+}
+
 .modal {
     display: none;
     position: fixed;

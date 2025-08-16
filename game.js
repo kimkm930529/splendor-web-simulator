@@ -30,12 +30,27 @@ let cardData = [];
 
 // 게임 초기화
 async function initGame() {
+    // 플레이어 이름 입력 모달 표시
+    showPlayerNameModal();
+}
+
+// 플레이어 이름 입력 모달 표시
+function showPlayerNameModal() {
+    const modal = document.getElementById('player-name-modal');
+    modal.style.display = 'block';
+}
+
+// 멀티플레이어 게임 시작
+async function startMultiplayerGame() {
+    const player1Name = document.getElementById('player1-name').value || '플레이어1';
+    const player2Name = document.getElementById('player2-name').value || '플레이어2';
+    
     // Socket.IO 서버가 연결된 경우
     if (socket && socket.connected && socket.connected === true) {
         // Socket.IO를 통해 서버에 게임 입장 요청
         socket.emit('join_game', { 
             gameId: 'game1', 
-            playerName: '플레이어1' 
+            playerName: player1Name 
         });
         
         // 서버에서 게임 상태 업데이트를 받을 때마다 처리
@@ -51,6 +66,7 @@ async function initGame() {
             gameState = data.gameState;
             updateDisplay();
             addLogEntry("게임에 입장했습니다!");
+            closePlayerNameModal();
         });
         
         // 게임 시작 시 처리
@@ -113,18 +129,40 @@ async function initGame() {
             console.error('에러 발생:', data.message);
             addLogEntry(`에러: ${data.message}`);
         });
+        
+        addLogEntry("멀티플레이어 게임을 시작합니다. 다른 플레이어가 입장할 때까지 기다려주세요.");
     } else {
-        // 로컬 모드: 기존 로직 사용
-        console.log('로컬 모드로 게임을 시작합니다.');
-        await loadCardData();
-        setupNobleTiles();
-        setupDevelopmentCards();
-        addLogEntry("로컬 모드로 게임이 시작되었습니다!");
+        alert('Socket.IO 서버에 연결할 수 없습니다. 로컬 게임을 시작합니다.');
+        startLocalGame();
     }
+}
+
+// 로컬 게임 시작
+async function startLocalGame() {
+    const player1Name = document.getElementById('player1-name').value || '플레이어1';
+    const player2Name = document.getElementById('player2-name').value || '플레이어2';
+    
+    console.log('로컬 모드로 게임을 시작합니다.');
+    await loadCardData();
+    setupNobleTiles();
+    setupDevelopmentCards();
+    
+    // 플레이어 이름 설정
+    gameState.players[0].name = player1Name;
+    gameState.players[1].name = player2Name;
+    
+    addLogEntry("로컬 모드로 게임이 시작되었습니다!");
+    closePlayerNameModal();
     
     // 초기 UI 설정
     updateDisplay();
     updateButtonStates();
+}
+
+// 플레이어 이름 입력 모달 닫기
+function closePlayerNameModal() {
+    const modal = document.getElementById('player-name-modal');
+    modal.style.display = 'none';
 }
 
 // CSV 파일에서 카드 데이터 로드
