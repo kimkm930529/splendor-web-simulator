@@ -21,7 +21,8 @@ let gameState = {
     currentAction: null,
     selectedTokens: [],
     selectedCard: null,
-    modalSelectedTokens: []
+    modalSelectedTokens: [],
+    actionCompleted: false
 };
 
 // 카드 데이터
@@ -29,11 +30,91 @@ let cardData = [];
 
 // 게임 초기화
 async function initGame() {
-    await loadCardData();
-    setupNobleTiles();
-    setupDevelopmentCards();
+    // Socket.IO를 통해 서버에 게임 입장 요청
+    socket.emit('join_game', { 
+        gameId: 'game1', 
+        playerName: '플레이어1' 
+    });
+    
+    // 서버에서 게임 상태 업데이트를 받을 때마다 처리
+    socket.on('game_state_update', (data) => {
+        // 서버에서 받은 게임 상태로 업데이트
+        gameState = data.gameState;
+        updateDisplay();
+    });
+    
+    // 게임 입장 성공 시 처리
+    socket.on('game_joined', (data) => {
+        console.log('게임에 입장했습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+        addLogEntry("게임에 입장했습니다!");
+    });
+    
+    // 게임 시작 시 처리
+    socket.on('game_started', (data) => {
+        console.log('게임이 시작되었습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+        addLogEntry("게임이 시작되었습니다!");
+    });
+    
+    // 토큰 선택 시 처리
+    socket.on('token_selected', (data) => {
+        console.log('토큰이 선택되었습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+    });
+    
+    // 토큰 획득 시 처리
+    socket.on('tokens_taken', (data) => {
+        console.log('토큰을 획득했습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+        addLogEntry("토큰을 획득했습니다!");
+    });
+    
+    // 카드 구매 시 처리
+    socket.on('card_bought', (data) => {
+        console.log('카드를 구매했습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+        addLogEntry("카드를 구매했습니다!");
+    });
+    
+    // 카드 예약 시 처리
+    socket.on('card_reserved', (data) => {
+        console.log('카드를 예약했습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+        addLogEntry("카드를 예약했습니다!");
+    });
+    
+    // 턴 종료 시 처리
+    socket.on('turn_ended', (data) => {
+        console.log('턴이 종료되었습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+        addLogEntry("턴이 종료되었습니다!");
+    });
+    
+    // 게임 종료 시 처리
+    socket.on('game_finished', (data) => {
+        console.log('게임이 종료되었습니다:', data);
+        gameState = data.gameState;
+        updateDisplay();
+        addLogEntry("게임이 종료되었습니다!");
+    });
+    
+    // 에러 처리
+    socket.on('error', (data) => {
+        console.error('에러 발생:', data.message);
+        addLogEntry(`에러: ${data.message}`);
+    });
+    
+    // 초기 UI 설정
     updateDisplay();
-    addLogEntry("게임이 시작되었습니다!");
+    updateButtonStates();
 }
 
 // CSV 파일에서 카드 데이터 로드
@@ -42,6 +123,15 @@ async function loadCardData() {
         const response = await fetch('splendor_card.csv');
         const csvText = await response.text();
         const lines = csvText.split('\n');
+        
+        // 보너스 보석 한글-영어 매핑
+        const bonusMapping = {
+            '사파이어': 'sapphire',
+            '에메랄드': 'emerald',
+            '루비': 'ruby',
+            '다이아몬드': 'diamond',
+            '오닉스': 'onyx'
+        };
         
         // 헤더 제거
         for (let i = 1; i < lines.length; i++) {
@@ -52,7 +142,7 @@ async function loadCardData() {
                     const card = {
                         level: parseInt(values[0].replace('레벨 ', '')),
                         prestige: parseInt(values[1]),
-                        bonus: values[2],
+                        bonus: bonusMapping[values[2]] || values[2], // 한글을 영어로 변환
                         cost: {
                             diamond: parseInt(values[3]),
                             emerald: parseInt(values[4]),
@@ -142,37 +232,55 @@ function setupDevelopmentCards() {
     }
 }
 
-// 턴 종료
-function endTurn() {
-    // 선택된 토큰이 있으면 플레이어에게 추가
-    if (gameState.selectedTokens.length > 0) {
-        const player = gameState.players[gameState.currentPlayer];
-        gameState.selectedTokens.forEach(gem => {
-            player.tokens[gem]++;
+// 카드 구매/예약 후 새로운 카드 추가
+function addNewCard(removedCardLevel) {
+    // 해당 레벨의 사용 가능한 카드들 찾기
+    const availableCards = cardData.filter(card => {
+        if (card.level !== removedCardLevel) return false;
+        
+        // 이미 개발 카드 영역에 있는 카드 제외
+        const isInDevelopment = gameState.developmentCards.some(devCard => 
+            devCard.level === card.level && 
+            devCard.prestige === card.prestige && 
+            devCard.bonus === card.bonus &&
+            JSON.stringify(devCard.cost) === JSON.stringify(card.cost)
+        );
+        
+        // 플레이어가 소유하거나 예약한 카드 제외
+        const isOwnedOrReserved = Object.values(gameState.players).some(player => {
+            const isOwned = player.cards.some(ownedCard => 
+                ownedCard.level === card.level && 
+                ownedCard.prestige === card.prestige && 
+                ownedCard.bonus === card.bonus &&
+                JSON.stringify(ownedCard.cost) === JSON.stringify(card.cost)
+            );
+            const isReserved = player.reservedCards.some(reservedCard => 
+                reservedCard.level === card.level && 
+                reservedCard.prestige === card.prestige && 
+                reservedCard.bonus === card.bonus &&
+                JSON.stringify(reservedCard.cost) === JSON.stringify(card.cost)
+            );
+            return isOwned || isReserved;
         });
         
-        addLogEntry(`플레이어 ${gameState.currentPlayer}이(가) ${gameState.selectedTokens.map(gem => getGemName(gem)).join(', ')} 토큰을 획득했습니다.`);
+        return !isInDevelopment && !isOwnedOrReserved;
+    });
+    
+    // 사용 가능한 카드가 있으면 랜덤 선택하여 추가
+    if (availableCards.length > 0) {
+        const randomIndex = Math.floor(Math.random() * availableCards.length);
+        const newCard = availableCards[randomIndex];
+        gameState.developmentCards.push(newCard);
+        addLogEntry(`새로운 레벨 ${removedCardLevel} 카드가 추가되었습니다.`);
     }
-    
-    gameState.currentAction = null;
-    gameState.selectedTokens = [];
-    gameState.selectedCard = null;
-    
-    // 귀족 방문 확인
-    checkNobleVisits();
-    
-    // 승리 조건 확인
-    if (gameState.players[gameState.currentPlayer].prestigePoints >= 15) {
-        endGame();
-        return;
-    }
-    
-    // 다음 플레이어로 턴 변경
-    gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
-    
-    addLogEntry(`플레이어 ${gameState.currentPlayer === 1 ? 2 : 1}의 턴이 종료되었습니다.`);
-    addLogEntry(`플레이어 ${gameState.currentPlayer}의 턴이 시작되었습니다.`);
-    updateDisplay();
+}
+
+// 턴 종료
+function endTurn() {
+    // 서버에 턴 종료 요청
+    socket.emit('end_turn', { 
+        gameId: 'game1' 
+    });
 }
 
 // 귀족 방문 확인
@@ -217,47 +325,14 @@ function endGame() {
 
 // 새 게임 시작
 function startNewGame() {
-    // 게임 상태 초기화
-    gameState = {
-        currentPlayer: 1,
-        players: {
-            1: {
-                tokens: { sapphire: 0, emerald: 0, ruby: 0, diamond: 0, onyx: 0, gold: 0 },
-                cards: [],
-                reservedCards: [],
-                prestigePoints: 0
-            },
-            2: {
-                tokens: { sapphire: 0, emerald: 0, ruby: 0, diamond: 0, onyx: 0, gold: 0 },
-                cards: [],
-                reservedCards: [],
-                prestigePoints: 0
-            }
-        },
-        availableTokens: { sapphire: 5, emerald: 5, ruby: 5, diamond: 5, onyx: 5, gold: 5 },
-        developmentCards: [],
-        nobleTiles: [],
-        currentAction: null,
-        selectedTokens: [],
-        selectedCard: null,
-        modalSelectedTokens: []
-    };
-    
-    // 게임 재설정
-    setupNobleTiles();
-    setupDevelopmentCards();
-    
-    // 버튼 활성화
-    document.getElementById('end-turn-btn').disabled = false;
-    document.getElementById('take-tokens-btn').disabled = false;
-    document.getElementById('buy-card-btn').disabled = false;
-    document.getElementById('reserve-card-btn').disabled = false;
+    // 서버에 새 게임 시작 요청
+    socket.emit('start_game', { 
+        gameId: 'game1' 
+    });
     
     // 로그 초기화
     document.getElementById('log-content').innerHTML = '';
-    
-    updateDisplay();
-    addLogEntry("새 게임이 시작되었습니다!");
+    addLogEntry("새 게임을 요청했습니다!");
 }
 
 // 보석 이름 가져오기

@@ -254,15 +254,15 @@ header h1 {
 
 .player-info {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 15px;
 }
 
-.player-cards, .player-tokens, .reserved-cards {
+.player-cards, .player-tokens, .reserved-cards, .player-bonus {
     text-align: center;
 }
 
-.player-cards h4, .player-tokens h4, .reserved-cards h4 {
+.player-cards h4, .player-tokens h4, .reserved-cards h4, .player-bonus h4 {
     margin-bottom: 10px;
     color: #4a5568;
     font-size: 1em;
@@ -276,10 +276,47 @@ header h1 {
     min-height: 50px;
 }
 
+#player1-owned-cards-summary, #player2-owned-cards-summary {
+    text-align: center;
+    min-height: 50px;
+}
+
+.owned-cards-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.level-count {
+    font-size: 0.8em;
+    color: #4a5568;
+    padding: 2px 0;
+}
+
 #player1-token-display, #player2-token-display {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
+}
+
+#player1-bonus-display, #player2-bonus-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    min-height: 40px;
+}
+
+.bonus-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.bonus-count {
+    font-weight: bold;
+    color: #333;
 }
 
 /* 현재 플레이어 하이라이트 */
@@ -306,6 +343,34 @@ header h1 {
     margin: 10px 0;
     border: 1px solid #9ae6b4;
     font-weight: bold;
+}
+
+/* 소유 카드 모달 스타일 */
+.owned-cards-modal {
+    margin: 20px 0;
+}
+
+.level-section {
+    margin-bottom: 20px;
+}
+
+.level-section h3 {
+    color: #4a5568;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 5px;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.cards-grid .development-card {
+    transform: scale(0.8);
+    margin: 0 auto;
 }
 
 #selected-tokens-area {
@@ -399,8 +464,10 @@ button:disabled {
     padding: 30px;
     border-radius: 10px;
     width: 80%;
-    max-width: 600px;
+    max-width: 800px;
     position: relative;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .close {

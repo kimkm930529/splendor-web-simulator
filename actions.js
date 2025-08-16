@@ -55,6 +55,10 @@ function selectTokenInModal(gem) {
         if (availableCount >= 2) {
             gameState.modalSelectedTokens.push(gem);
         }
+        // 특정 보석이 2개만 남은 경우 2개 선택 불가
+        else if (availableCount === 2) {
+            return; // 2개만 남았으면 2개 선택 불가
+        }
     } else {
         // 새로운 보석 선택
         const uniqueTokens = [...new Set(gameState.modalSelectedTokens)];
@@ -77,38 +81,11 @@ function selectTokenInModal(gem) {
 // 토큰 선택 (기본 화면에서 사용)
 function selectToken(gem) {
     if (gameState.currentAction === 'take') {
-        // 황금 토큰은 선택할 수 없음
-        if (gem === 'gold') return;
-        
-        const currentGemCount = gameState.selectedTokens.filter(token => token === gem).length;
-        const availableCount = gameState.availableTokens[gem];
-        
-        // 이미 최대 개수(2개)를 선택한 경우 제거
-        if (currentGemCount >= 2) {
-            // 해당 보석의 모든 토큰 제거
-            gameState.selectedTokens = gameState.selectedTokens.filter(token => token !== gem);
-        } else if (currentGemCount >= 1) {
-            // 이미 1개 선택된 경우, 2개로 증가
-            if (availableCount >= 2) {
-                gameState.selectedTokens.push(gem);
-            }
-        } else {
-            // 새로운 보석 선택
-            const uniqueTokens = [...new Set(gameState.selectedTokens)];
-            
-            // 같은 종류의 토큰을 2개 선택한 경우, 다른 종류는 선택 불가
-            const hasTwoOfSame = gameState.selectedTokens.some(token => 
-                gameState.selectedTokens.filter(t => t === token).length >= 2
-            );
-            
-            if (hasTwoOfSame) return;
-            
-            // 최대 3개까지만 선택 가능
-            if (gameState.selectedTokens.length < 3) {
-                gameState.selectedTokens.push(gem);
-            }
-        }
-        updateTokenSelectionDisplay();
+        // 서버에 토큰 선택 요청
+        socket.emit('select_token', { 
+            gameId: 'game1',
+            gem: gem
+        });
     }
 }
 
@@ -170,7 +147,7 @@ function validateTokenSelection() {
         if (count >= 2) {
             const availableCount = gameState.availableTokens[gem];
             if (availableCount < 3) {
-                messageDiv.innerHTML = '<div class="modal-warning">같은 종류의 보석 2개를 선택하려면, 해당 보석이 3개 이상이어야합니다.</div>';
+                messageDiv.innerHTML = '<div class="modal-warning">잘못된 토큰 선택입니다. 특정 보석이 2개만 남은 경우, 동일한 보석을 2개 선택할 수 없습니다.</div>';
                 return;
             }
         }
@@ -213,7 +190,7 @@ function validateModalTokenSelection() {
         if (count >= 2) {
             const availableCount = gameState.availableTokens[gem];
             if (availableCount < 3) {
-                messageDiv.innerHTML = '<div class="modal-warning">같은 종류의 보석 2개를 선택하려면, 해당 보석이 3개 이상이어야합니다.</div>';
+                messageDiv.innerHTML = '<div class="modal-warning">잘못된 토큰 선택입니다. 특정 보석이 2개만 남은 경우, 동일한 보석을 2개 선택할 수 없습니다.</div>';
                 return;
             }
         }
@@ -252,58 +229,24 @@ function confirmTakeTokens() {
         return;
     }
     
-    // 선택된 토큰을 게임 상태에 저장 (아직 플레이어에게 주지 않음)
-    // 토큰은 턴 종료 시에 플레이어에게 추가됨
-    gameState.selectedTokens = [...gameState.modalSelectedTokens];
-    
-    addLogEntry(`플레이어 ${gameState.currentPlayer}이(가) ${gameState.selectedTokens.map(gem => getGemName(gem)).join(', ')} 토큰을 선택했습니다.`);
+    // 서버에 토큰 획득 요청
+    socket.emit('confirm_take_tokens', { 
+        gameId: 'game1' 
+    });
     
     closeModal();
-    gameState.currentAction = null;
-    
-    // 모달이 닫힌 후에 메인 화면의 선택된 토큰 영역 업데이트
-    updateMainSelectedTokensDisplay();
-    updateButtonStates();
 }
 
 // 카드 구매 확인
 function confirmBuyCard() {
-    const player = gameState.players[gameState.currentPlayer];
-    const playerBonus = getPlayerBonus(player);
-    
-    // 비용 지불
-    Object.entries(gameState.selectedCard.cost).forEach(([gem, cost]) => {
-        if (cost > 0) {
-            const needed = cost - playerBonus[gem];
-            if (needed > 0) {
-                player.tokens[gem] -= needed;
-                gameState.availableTokens[gem] += needed;
-            }
-        }
+    // 서버에 카드 구매 요청
+    socket.emit('buy_card', { 
+        gameId: 'game1',
+        cardId: gameState.selectedCard.id,
+        level: gameState.selectedCard.level
     });
     
-    // 카드 획득
-    player.cards.push(gameState.selectedCard);
-    player.prestigePoints += gameState.selectedCard.prestige;
-    
-    // 카드 제거 (개발 카드에서 구매한 경우)
-    const cardIndex = gameState.developmentCards.indexOf(gameState.selectedCard);
-    if (cardIndex > -1) {
-        gameState.developmentCards.splice(cardIndex, 1);
-    } else {
-        // 예약된 카드에서 구매한 경우
-        const reservedIndex = player.reservedCards.indexOf(gameState.selectedCard);
-        if (reservedIndex > -1) {
-            player.reservedCards.splice(reservedIndex, 1);
-        }
-    }
-    
-    addLogEntry(`플레이어 ${gameState.currentPlayer}이(가) ${getGemName(gameState.selectedCard.bonus)} 보너스 카드를 구매했습니다.`);
-    
     closeModal();
-    gameState.currentAction = null;
-    gameState.selectedCard = null;
-    updateDisplay();
 }
 
 // 카드 예약
@@ -315,27 +258,30 @@ function reserveCard(card) {
         return;
     }
     
-    // 금 토큰 받기
-    if (gameState.availableTokens.gold > 0) {
-        player.tokens.gold++;
-        gameState.availableTokens.gold--;
-    }
-    
-    // 카드 예약
-    player.reservedCards.push(card);
-    const cardIndex = gameState.developmentCards.indexOf(card);
-    gameState.developmentCards.splice(cardIndex, 1);
-    
-    addLogEntry(`플레이어 ${gameState.currentPlayer}이(가) 카드를 예약하고 금 토큰을 받았습니다.`);
-    
-    gameState.currentAction = null;
-    updateDisplay();
+    // 서버에 카드 예약 요청
+    socket.emit('reserve_card', { 
+        gameId: 'game1',
+        cardId: card.id,
+        level: card.level
+    });
 }
 
-// 선택 취소
+// 선택 취소 (사용자 액션)
 function cancelSelection() {
+    // 서버에 토큰 선택 취소 요청
+    socket.emit('cancel_token_selection', { 
+        gameId: 'game1' 
+    });
+    
+    addLogEntry(`플레이어 ${gameState.currentPlayer}이(가) 선택을 취소했습니다.`);
+}
+
+// 선택된 토큰 초기화 (턴 종료 시 자동 호출)
+function clearSelectedTokens() {
     gameState.selectedTokens = [];
+    gameState.selectedCard = null;
+    gameState.currentAction = null;
+    gameState.actionCompleted = false;
     updateMainSelectedTokensDisplay();
     updateButtonStates();
-    addLogEntry(`플레이어 ${gameState.currentPlayer}이(가) 토큰 선택을 취소했습니다.`);
 }

@@ -11,12 +11,20 @@ function updateDisplay() {
 
 // 토큰 표시 업데이트
 function updateTokenDisplay() {
-    document.getElementById('sapphire-count').textContent = gameState.availableTokens.sapphire;
-    document.getElementById('emerald-count').textContent = gameState.availableTokens.emerald;
-    document.getElementById('ruby-count').textContent = gameState.availableTokens.ruby;
-    document.getElementById('diamond-count').textContent = gameState.availableTokens.diamond;
-    document.getElementById('onyx-count').textContent = gameState.availableTokens.onyx;
-    document.getElementById('gold-count').textContent = gameState.availableTokens.gold;
+    // 토큰 수가 0 미만이 되지 않도록 보장
+    const tokens = gameState.availableTokens;
+    Object.keys(tokens).forEach(gem => {
+        if (tokens[gem] < 0) {
+            tokens[gem] = 0;
+        }
+    });
+    
+    document.getElementById('sapphire-count').textContent = tokens.sapphire;
+    document.getElementById('emerald-count').textContent = tokens.emerald;
+    document.getElementById('ruby-count').textContent = tokens.ruby;
+    document.getElementById('diamond-count').textContent = tokens.diamond;
+    document.getElementById('onyx-count').textContent = tokens.onyx;
+    document.getElementById('gold-count').textContent = tokens.gold;
 }
 
 // 카드 표시 업데이트
@@ -129,32 +137,65 @@ function updatePlayerDisplay() {
 function updateSinglePlayerDisplay(playerNum) {
     const player = gameState.players[playerNum];
     
-    // 소유한 카드
-    const ownedCardsContainer = document.getElementById(`player${playerNum}-owned-cards`);
-    ownedCardsContainer.innerHTML = '';
-    player.cards.forEach(card => {
-        const cardElement = createCardElement(card);
-        cardElement.style.transform = 'scale(0.6)';
-        ownedCardsContainer.appendChild(cardElement);
-    });
+    // 소유한 카드 요약 표시 (레벨별 개수)
+    const ownedCardsSummaryContainer = document.getElementById(`player${playerNum}-owned-cards-summary`);
+    if (ownedCardsSummaryContainer) {
+        const levelCounts = { 1: 0, 2: 0, 3: 0 };
+        player.cards.forEach(card => {
+            levelCounts[card.level]++;
+        });
+        
+        ownedCardsSummaryContainer.innerHTML = `
+            <div class="owned-cards-summary">
+                <div class="level-count">레벨 1: ${levelCounts[1]}장</div>
+                <div class="level-count">레벨 2: ${levelCounts[2]}장</div>
+                <div class="level-count">레벨 3: ${levelCounts[3]}장</div>
+            </div>
+        `;
+    }
     
     // 플레이어 토큰
     const playerTokenContainer = document.getElementById(`player${playerNum}-token-display`);
     playerTokenContainer.innerHTML = '';
     
     Object.entries(player.tokens).forEach(([gem, count]) => {
-        if (count > 0) {
+        // 토큰 수가 0 미만이 되지 않도록 보장
+        const displayCount = Math.max(0, count);
+        
+        if (displayCount > 0) {
             const tokenGroup = document.createElement('div');
             tokenGroup.className = 'token-group';
             tokenGroup.innerHTML = `
                 <div class="token ${gem}" style="width: 30px; height: 30px; font-size: 0.8em;">
-                    <span class="token-count">${count}</span>
+                    <span class="token-count">${displayCount}</span>
                 </div>
                 <span style="font-size: 0.7em;">${getGemName(gem)}</span>
             `;
             playerTokenContainer.appendChild(tokenGroup);
         }
     });
+    
+    // 보너스 보석 효과 표시
+    const playerBonus = getPlayerBonus(player);
+    const bonusContainer = document.getElementById(`player${playerNum}-bonus-display`);
+    
+    if (bonusContainer) {
+        bonusContainer.innerHTML = '';
+        
+        Object.entries(playerBonus).forEach(([gem, bonusCount]) => {
+            if (bonusCount > 0) {
+                const bonusGroup = document.createElement('div');
+                bonusGroup.className = 'bonus-group';
+                bonusGroup.innerHTML = `
+                    <div class="token ${gem}" style="width: 25px; height: 25px; font-size: 0.7em; border: 2px solid #333;">
+                        <span class="bonus-count">${bonusCount}</span>
+                    </div>
+                    <span style="font-size: 0.6em; color: #666;">보너스</span>
+                `;
+                bonusContainer.appendChild(bonusGroup);
+            }
+        });
+    }
     
     // 예약된 카드
     const reservedContainer = document.getElementById(`player${playerNum}-reserved-display`);
@@ -179,9 +220,11 @@ function updateGameInfo() {
     document.getElementById('player-name').textContent = `플레이어 ${gameState.currentPlayer}`;
     document.getElementById('points').textContent = currentPlayer.prestigePoints;
     
-    // 플레이어별 점수 표시 업데이트
-    document.querySelector('#player1-area h3').textContent = `플레이어 1 (${player1.prestigePoints}점)`;
-    document.querySelector('#player2-area h3').textContent = `플레이어 2 (${player2.prestigePoints}점)`;
+    // 플레이어별 점수 표시 업데이트 (현재 턴 표시 포함)
+    const player1Turn = gameState.currentPlayer === 1 ? '[Turn] ' : '';
+    const player2Turn = gameState.currentPlayer === 2 ? '[Turn] ' : '';
+    document.querySelector('#player1-area h3').textContent = `${player1Turn}플레이어 1 (${player1.prestigePoints}점)`;
+    document.querySelector('#player2-area h3').textContent = `${player2Turn}플레이어 2 (${player2.prestigePoints}점)`;
 }
 
 // 토큰 선택 표시 업데이트 (모달 내부에서만)
@@ -375,16 +418,17 @@ function updateMainSelectedTokensDisplay() {
 // 버튼 상태 업데이트
 function updateButtonStates() {
     const hasSelectedTokens = gameState.selectedTokens.length > 0;
+    const hasCompletedAction = hasSelectedTokens || gameState.actionCompleted;
+    const currentPlayer = gameState.players[gameState.currentPlayer];
+    const hasMaxReservedCards = currentPlayer.reservedCards.length >= 3;
     
-    // 토큰이 선택된 상태에서는 카드 구매, 카드 예약 버튼 비활성화
-    document.getElementById('buy-card-btn').disabled = hasSelectedTokens;
-    document.getElementById('reserve-card-btn').disabled = hasSelectedTokens;
+    // 액션이 완료된 상태에서는 모든 액션 버튼 비활성화
+    document.getElementById('take-tokens-btn').disabled = hasCompletedAction;
+    document.getElementById('buy-card-btn').disabled = hasCompletedAction;
+    document.getElementById('reserve-card-btn').disabled = hasCompletedAction || hasMaxReservedCards;
     
-    // 토큰이 선택된 상태에서는 턴 종료 버튼 활성화
-    document.getElementById('end-turn-btn').disabled = !hasSelectedTokens;
-    
-    // 보석 토큰 가져오기 버튼은 항상 활성화 (새로운 선택을 위해)
-    document.getElementById('take-tokens-btn').disabled = false;
+    // 액션이 완료된 상태에서만 턴 종료 버튼 활성화
+    document.getElementById('end-turn-btn').disabled = !hasCompletedAction;
 }
 
 // 토큰 가져오기 모달
@@ -459,11 +503,58 @@ function showBuyCardModal() {
     modal.style.display = 'block';
 }
 
+// 소유 카드 모달 표시
+function showOwnedCardsModal(playerNum) {
+    const player = gameState.players[playerNum];
+    const modal = document.getElementById('modal');
+    const modalBody = document.getElementById('modal-body');
+    
+    // 레벨별로 카드 분류
+    const levelCards = { 1: [], 2: [], 3: [] };
+    player.cards.forEach(card => {
+        levelCards[card.level].push(card);
+    });
+    
+    modalBody.innerHTML = `
+        <h2>플레이어 ${playerNum} 소유 카드</h2>
+        <div class="owned-cards-modal">
+            <div class="level-section">
+                <h3>레벨 1 카드 (${levelCards[1].length}장)</h3>
+                <div class="cards-grid">
+                    ${levelCards[1].map(card => createCardElement(card).outerHTML).join('')}
+                </div>
+            </div>
+            <div class="level-section">
+                <h3>레벨 2 카드 (${levelCards[2].length}장)</h3>
+                <div class="cards-grid">
+                    ${levelCards[2].map(card => createCardElement(card).outerHTML).join('')}
+                </div>
+            </div>
+            <div class="level-section">
+                <h3>레벨 3 카드 (${levelCards[3].length}장)</h3>
+                <div class="cards-grid">
+                    ${levelCards[3].map(card => createCardElement(card).outerHTML).join('')}
+                </div>
+            </div>
+        </div>
+        <button onclick="closeModal()">닫기</button>
+    `;
+    
+    modal.style.display = 'block';
+}
+
 // 모달 닫기
 function closeModal() {
     document.getElementById('modal').style.display = 'none';
     
-    // 모달이 닫힐 때 선택된 토큰을 초기화하지 않음
+    // 카드 구매 모달에서 취소한 경우 상태 초기화
+    if (gameState.currentAction === 'buy' && gameState.selectedCard) {
+        gameState.selectedCard = null;
+        gameState.currentAction = null;
+        updateButtonStates();
+    }
+    
+    // 토큰 가져오기 모달에서는 선택된 토큰을 초기화하지 않음
     // (확인 버튼을 통해 선택이 완료된 경우에는 유지)
 }
 

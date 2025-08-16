@@ -1,3 +1,6 @@
+// Socket.IO 연결
+const socket = io('http://localhost:3000');
+
 // 이벤트 리스너 설정
 document.addEventListener('DOMContentLoaded', () => {
     // 버튼 이벤트
