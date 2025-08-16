@@ -45,18 +45,45 @@
 
 ## 파일 구조
 
+### 핵심 파일
 - `index.html`: 게임의 메인 HTML 파일
 - `styles.css`: 게임의 스타일시트
-- `script.js`: 게임 로직을 담은 JavaScript 파일
 - `splendor_card.csv`: 개발 카드 데이터
 - `splendor_rules.md`: 게임 규칙 상세 설명
 
+### JavaScript 모듈 (모듈화된 구조)
+- `game.js`: 게임 상태 관리 및 핵심 로직
+  - 게임 상태(`gameState`) 객체 정의 및 관리
+  - 게임 초기화(`initGame`, `loadCardData`, `setupNobleTiles`, `setupDevelopmentCards`)
+  - 핵심 게임 로직(`endTurn`, `checkNobleVisits`, `endGame`, `startNewGame`)
+  - 유틸리티 함수(`getGemName`, `getPlayerBonus`)
+
+- `actions.js`: 플레이어 행동 및 유효성 검사
+  - 플레이어 행동 함수(`takeTokensAction`, `buyCardAction`, `reserveCardAction`)
+  - 토큰/카드 선택 로직(`selectToken`, `selectCard`, `selectReservedCard`)
+  - 유효성 검사 함수(`canConfirmTokenSelection`, `validateTokenSelection`)
+  - 확인 액션 함수(`confirmTakeTokens`, `confirmBuyCard`, `reserveCard`)
+
+- `ui.js`: UI 업데이트 및 DOM 요소 생성
+  - 화면 업데이트 함수(`updateDisplay`, `updateTokenDisplay`, `updateCardDisplay`)
+  - 플레이어 표시 함수(`updatePlayerDisplay`, `updateSinglePlayerDisplay`)
+  - 모달 관리 함수(`showTakeTokensModal`, `showBuyCardModal`, `closeModal`)
+  - DOM 요소 생성 함수(`createCardElement`)
+  - 상태 표시 함수(`updateMainSelectedTokensDisplay`, `updateButtonStates`)
+
+- `events.js`: 이벤트 리스너 관리
+  - DOM 이벤트 처리(`DOMContentLoaded`)
+  - 버튼 클릭 이벤트 리스너
+  - 모달 이벤트 처리
+  - 토큰 클릭 이벤트 처리
+
 ## 기술 스택
 
-- HTML5
-- CSS3
-- JavaScript (ES6+)
-- CSV 데이터 파싱
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **데이터 처리**: CSV 데이터 파싱
+- **아키텍처**: 모듈화된 JavaScript 구조
+- **상태 관리**: 중앙화된 게임 상태 객체
+- **이벤트 처리**: 이벤트 기반 사용자 인터랙션
 
 ## 게임 특징
 
@@ -65,6 +92,9 @@
 - 직관적인 사용자 인터페이스
 - 실시간 게임 로그
 - 반응형 디자인
+- 모듈화된 코드 구조로 유지보수성 향상
+- 2인 플레이 지원
+- 토큰 선택 시 실시간 유효성 검사 및 피드백
 
 ## 라이선스
 
